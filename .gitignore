@@ -1,0 +1,8 @@
+.venv/
+venv/
+env/
+
+.vscode/
+
+svm.cpp
+main.py
