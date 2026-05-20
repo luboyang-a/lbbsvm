@@ -28,10 +28,13 @@ ext_modules = [
 class BuildExt(build_ext):
     def build_extensions(self):
         opts = []
+        link_opts = []  # 🚨 必须新增链接参数列表！
+
         if sys.platform == 'win32':
             opts.append('/O2')
             opts.append('/std:c++14')
             opts.append('/arch:AVX2')
+            opts.append('/openmp')
         else:
             opts.append('-O3')
             opts.append('-std=c++14')
@@ -39,9 +42,12 @@ class BuildExt(build_ext):
             opts.append('-march=native')
             opts.append('-mavx2')
             opts.append('-mfma')
+            opts.append('-fopenmp')
+            link_opts.append('-fopenmp')
 
         for ext in self.extensions:
             ext.extra_compile_args = opts
+            ext.extra_link_args = link_opts
             
         super().build_extensions()
 

@@ -25,10 +25,12 @@ void LRUCache::reset(int _sz, int* _indices) {
 void LRUCache::get_row(int i, int offset) {
     double* row = data + (long long)sz * offset;
     if(indices == nullptr) {
+        #pragma omp parallel for if (sz >= SAMPLE_THRESHOLD)
         for(int j = 0; j < sz; j++)
             row[j] = matrix->get(i, j);
     }
     else {
+        #pragma omp parallel for if (sz >= SAMPLE_THRESHOLD)
         for(int j = 0; j < sz; j++)
             row[j] = matrix->get(indices[i], indices[j]);
     }

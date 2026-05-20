@@ -20,6 +20,7 @@ void SVC::fit(int max_iter) {
     solver.solve(max_iter, model);
 }
 void SVC::predict(double* X_test, int* y_pred, int n_test) {
+    #pragma omp parallel for if (n_test >= SAMPLE_THRESHOLD)
     for(int i = 0; i < n_test; i++) {
         double* xi = X_test + i * dim;
         double res = 0.0;
@@ -103,12 +104,15 @@ void OneVsOneSVC::fit(int max_iter) {
 }
 void OneVsOneSVC::predict(double* X_test, int* y_pred, int n_test) {
     int pair_cnt = num_class * (num_class - 1) / 2;
-    int* votes = new int[num_class];
-    double* score = new double[num_class];
+    int* votes = new int[n_test * num_class];
+    double* scores = new double[n_test * num_class];
+    memset(votes, 0, n_test * num_class * sizeof(int));
+    memset(scores, 0, n_test * num_class * sizeof(double));
+    #pragma omp parallel for if (n_test >= SAMPLE_THRESHOLD)
     for(int i = 0; i < n_test; i++) {
-        memset(votes, 0, num_class * sizeof(int));
-        memset(score, 0, num_class * sizeof(double));
         double* xi = X_test + i * dim;
+        int* vote = votes + i * num_class;
+        double* score = scores + i * num_class;
         for(int p = 0; p < pair_cnt; p++) {
             int ci = res_idx[p].t, cj = res_idx[p].f;
             double res = 0.0;
@@ -120,28 +124,28 @@ void OneVsOneSVC::predict(double* X_test, int* y_pred, int n_test) {
             }
             res -= mdl.b;
             if(res >= 0.0) {
-                votes[ci]++;
+                vote[ci]++;
                 score[ci] += res;
                 score[cj] -= res;
             }
             else {
-                votes[cj]++;
+                vote[cj]++;
                 score[ci] += res;
                 score[cj] -= res;
             }
         }
         int best_class = 0;
         for(int c = 1; c < num_class; c++) {
-            if(votes[c] > votes[best_class]) {
+            if(vote[c] > vote[best_class]) {
                 best_class = c;
-            } else if(votes[c] == votes[best_class] && score[c] > score[best_class]) {
+            } else if(vote[c] == vote[best_class] && score[c] > score[best_class]) {
                 best_class = c;
             }
         }
         y_pred[i] = best_class;
     }
     delete []votes;
-    delete []score;
+    delete []scores;
 }
 OneVsOneSVC::~OneVsOneSVC() {
     delete []y_tmp;

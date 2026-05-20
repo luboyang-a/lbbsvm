@@ -8,6 +8,7 @@
 #include <climits>
 #include <immintrin.h>
 #define N 200000000
+#define SAMPLE_THRESHOLD 5000
 #include <algorithm>
 #define TAU 1e-12
 #define INF 1e20

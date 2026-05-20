@@ -6,3 +6,6 @@ env/
 
 svm.cpp
 main.py
+libsvm.cpp
+build/
+*.so
