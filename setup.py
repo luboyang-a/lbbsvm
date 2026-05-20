@@ -28,7 +28,7 @@ ext_modules = [
 class BuildExt(build_ext):
     def build_extensions(self):
         opts = []
-        link_opts = []  # 🚨 必须新增链接参数列表！
+        link_opts = []
 
         if sys.platform == 'win32':
             opts.append('/O2')
