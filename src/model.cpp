@@ -5,6 +5,7 @@ QMatrix* SVC::init_matrix(double* _X, int _dim, int _sz, ktype _ty, double sigma
     switch(_ty) {
         case LINEAR: res = new VectorLinear(_X, _dim, _sz); break;
         case RBF   : res = new VectorRbf(_X, sigma, _dim, _sz); break;
+        case LISTLINEAR: res = new ListLinear(_X, _dim, _sz); break;
         default    : break;
     }
     return res;
@@ -42,6 +43,7 @@ QMatrix* OneVsOneSVC::init_matrix(double* _X, int _dim, int _sz, ktype _ty, doub
     switch(_ty) {
         case LINEAR: res = new VectorLinear(_X, _dim, _sz); break;
         case RBF   : res = new VectorRbf(_X, sigma, _dim, _sz); break;
+        case LISTLINEAR: res = new ListLinear(_X, _dim, _sz); break;
         default    : break;
     }
     return res;

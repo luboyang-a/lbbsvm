@@ -9,6 +9,7 @@
 #include <immintrin.h>
 #define N 200000000
 #define SAMPLE_THRESHOLD 5000
+#define SKIP_THRESHOLD 8
 #include <algorithm>
 #define TAU 1e-12
 #define INF 1e20
@@ -33,7 +34,8 @@ inline double dot_avx2(const double* a, const double* b, int dim) {
 
 enum ktype {
     LINEAR,
-    RBF
+    RBF,
+    LISTLINEAR
 };
 
 #endif

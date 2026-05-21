@@ -20,6 +20,9 @@ public:
         if (kernel == "rbf" || kernel == "RBF") {
             ty = RBF;
         }
+        else if(kernel == "LISTLINEAR" || kernel == "listlinear") {
+            ty = LISTLINEAR;
+        }
         double* X_ptr = (double*)(buf_X.ptr);
         int* y_ptr = (int*)(buf_y.ptr);
         svm_ptr = new OneVsOneSVC(X_ptr, y_ptr, dim, sz, C, eps, ty, sigma);
@@ -58,6 +61,9 @@ public:
         ktype ty = LINEAR;
         if (kernel == "rbf" || kernel == "RBF") {
             ty = RBF;
+        }
+        else if(kernel == "LISTLINEAR" || kernel == "listlinear") {
+            ty = LISTLINEAR;
         }
         double* X_ptr = (double*)(buf_X.ptr);
         int* y_ptr = (int*)(buf_y.ptr);
