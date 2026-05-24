@@ -12,7 +12,7 @@ QMatrix* SVC::init_matrix(double* _X, int _dim, int _sz, ktype _ty, double sigma
 }
 SVC::SVC(double* _X, int* _y, int _dim, int _sz, ktype _ty, double sigma, double _C, double _eps): 
 X(_X), y(_y), dim(_dim), sz(_sz), ty(_ty), matrix(init_matrix(_X, _dim, _sz, _ty, sigma)),
-cache(_sz, gmin(_sz, N / _sz), matrix), solver(_sz, _C, _eps, cache), C(_C), eps(_eps) {}
+cache(_sz, matrix), solver(_sz, _C, _eps, cache), C(_C), eps(_eps) {}
 void SVC::fit(int max_iter) {
     cache.reset(sz, nullptr);
     solver.reset(y, nullptr, sz);
@@ -74,9 +74,7 @@ solver(_C, _eps, cache), pos(0) {
     }
     std::sort(class_cnts, class_cnts + num_class, [](const int a, const int b) {return a < b;});
     int max_sz = class_cnts[num_class - 1] + class_cnts[num_class - 2];
-    int min_sz = class_cnts[0] + class_cnts[1];
-    int _list_pool_sz = gmin(max_sz, N / min_sz);
-    cache.init(max_sz, _list_pool_sz, matrix);
+    cache.init(max_sz, matrix);
     solver.init(max_sz);
     models = new ResInfo[num_class * (num_class - 1) / 2];
     res_idx = new ResIdx[num_class * (num_class - 1) / 2];
@@ -88,15 +86,16 @@ solver(_C, _eps, cache), pos(0) {
 void OneVsOneSVC::fit(int max_iter) {
     pos = 0;
     for(int ci = 0; ci < num_class; ci++) {
+        int ci_cnt = ((ci == num_class - 1) ? sz : class_idx[ci + 1]) - class_idx[ci];
+        memcpy(indices_tmp, indices + class_idx[ci], ci_cnt * sizeof(int));
+        cache.reset(ci_cnt);
+        for(int k = 0; k < ci_cnt; k++) y_tmp[k] = 1;
         for(int cj = ci + 1; cj < num_class; cj++) {
-            int ci_cnt = ((ci == num_class - 1) ? sz : class_idx[ci + 1]) - class_idx[ci];
             int cj_cnt = ((cj == num_class - 1) ? sz : class_idx[cj + 1]) - class_idx[cj];
             int curr_sz = ci_cnt + cj_cnt;
-            for(int k = 0; k < ci_cnt; k++) y_tmp[k] = 1;
             for(int k = ci_cnt; k < curr_sz; k++) y_tmp[k] = -1;
-            memcpy(indices_tmp, indices + class_idx[ci], ci_cnt * sizeof(int));
             memcpy(indices_tmp + ci_cnt, indices + class_idx[cj], cj_cnt * sizeof(int));
-            cache.reset(curr_sz, indices_tmp);
+            cache.sub_reset(curr_sz, indices_tmp);
             solver.reset(y_tmp, indices_tmp, curr_sz);
             res_idx[pos] = {ci, cj};
             solver.solve(max_iter, models[pos]);

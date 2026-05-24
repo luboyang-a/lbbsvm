@@ -3,26 +3,42 @@
 
 #include "common.h"
 #include "qmatrix.h"
-#include "list.h"
 
 class LRUCache {
 private:
-    double *data;
+    struct lru_node {
+        int idx;
+        int len;
+        double* Qdata;
+        lru_node *prev, *next;
+    };
+    lru_node lru_head;
+    lru_node lru_free;
+    lru_node** Map;
+    lru_node* pool;
+    double* data;
+    int max_sz;
     int sz;
+    int zsz;
     int max_cnt, cnt;
-    int *offsets, *indices;
-    List list;
+    int* indices;
     QMatrix* matrix;
+    void head_insert(lru_node* node);
+    lru_node* head_delete();
+    void free_insert(lru_node* node);
+    lru_node* free_delete();
+    void get_row(lru_node* node);
+    void upd(lru_node* node);
 public:
-    LRUCache(int max_sz, int _list_pool_size, QMatrix* _matrix);
     LRUCache();
-    void init(int max_sz, int _list_pool_size, QMatrix* _matrix);
+    LRUCache(int max_sz, QMatrix* _matrix);
+    void init(int max_sz, QMatrix* _matrix);
+    void reset(int _zsz);
     void reset(int _sz, int* _indices);
-    void get_row(int i, int offset);
-    int get_offset(int i);
-    double get(int i, int j);
+    void sub_reset(int _sz, int* _indices);
+    const double* query(int i, int* _len);
+    int ext(int i);
     double get_qd(int i);
-    const double* get_ptr(int i);
     ~LRUCache();
 };
 

@@ -78,7 +78,8 @@ int Solver::select_working_set(int& out_i, int& out_j) {
     }
     out_i = Gmax_idx;
     if(out_i == -1) return 0;
-    const double* Qi = cache.get_ptr(out_i);
+    int _len = 0;
+    const double* Qi = cache.query(out_i, &_len);
     for(int k = 0; k < active_set_size; k++) {
         int j = active_set[k];
         if(y[j] == 1) {
@@ -86,6 +87,7 @@ int Solver::select_working_set(int& out_i, int& out_j) {
                 double grad_diff = Gmax + G[j];
                 if(G[j] >= Gmax2) Gmax2 = G[j];
                 if(grad_diff > 0) {
+                    if(_len <= j) _len = cache.ext(out_i);
                     double Qij = (double)y[out_i] * (double)y[j] * Qi[j];
                     double quad_coef = cache.get_qd(out_i) + cache.get_qd(j) - 2.0 * (double)y[out_i] * Qij;
                     if(quad_coef <= 0) quad_coef = TAU;
@@ -102,6 +104,7 @@ int Solver::select_working_set(int& out_i, int& out_j) {
                 double grad_diff = Gmax - G[j];
                 if(-G[j] >= Gmax2) Gmax2 = -G[j];
                 if(grad_diff > 0) {
+                    if(_len <= j) _len = cache.ext(out_i);
                     double Qij = (double)y[out_i] * (double)y[j] * Qi[j];
                     double quad_coef = cache.get_qd(out_i) + cache.get_qd(j) + 2.0 * (double)y[out_i] * Qij;
                     if(quad_coef <= 0) quad_coef = TAU;
@@ -175,7 +178,7 @@ void Solver::do_shrinking() {
             }
         }
     }
-    if(Gmax1 + Gmax2 <= eps * 10 && !unshrink) {
+    if(Gmax1 + Gmax2 <= eps * 5 && !unshrink) {
         unshrink = true;
         un_shrinking();
     }
@@ -196,10 +199,13 @@ void Solver::un_shrinking() {
 }
 void Solver::solve(int max_iter, ResInfo& model) {
     int iter = 0, shrink_counter = 0;
+    int _leni = 0, _lenj = 0;
     while(iter < max_iter) {
-        if(shrink_counter >= gmin(1000, sz)) {
+        _leni = _lenj = 0;
+        if(shrink_counter >= gmin(500, sz)) {
             do_shrinking();
             shrink_counter = 0;
+            printf("ACTIVATE_SIZE: %d\n", active_set_size);
         }
         int i = -1, j = -1;
         if(select_working_set(i, j) == 0) {
@@ -212,7 +218,8 @@ void Solver::solve(int max_iter, ResInfo& model) {
         double old_alpha_i = alpha[i];
         double old_alpha_j = alpha[j];
         double yi = (double)y[i], yj = (double)y[j];
-        const double* Qi = cache.get_ptr(i);
+        const double* Qi = cache.query(i, &_leni);
+        if(_leni <= j) _leni = cache.ext(i);
         double Qij = yi * yj * Qi[j];
         if(y[i] != y[j]) {
             double quad_coef = cache.get_qd(i) + cache.get_qd(j) + 2.0 * Qij;
@@ -280,7 +287,9 @@ void Solver::solve(int max_iter, ResInfo& model) {
         }
         double delta_alpha_i = alpha[i] - old_alpha_i;
         double delta_alpha_j = alpha[j] - old_alpha_j;
-        const double* Qj = cache.get_ptr(j);
+        const double* Qj = cache.query(j, &_lenj);
+        if(_lenj < sz) _lenj = cache.ext(j);
+        if(_leni < sz) _leni = cache.ext(i);
         __m256d v_yi = _mm256_set1_pd((double)y[i]);
         __m256d v_yj = _mm256_set1_pd((double)y[j]);
         __m256d v_dalpha_i = _mm256_set1_pd(delta_alpha_i);

@@ -9,7 +9,6 @@ ext_modules = [
     Extension(
         'lbbsvm',
         sources=[
-            'src/list.cpp',
             'src/lrucache.cpp',
             'src/qmatrix.cpp',
             'src/solver.cpp',
